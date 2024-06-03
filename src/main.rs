@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use tokio::net::TcpListener;
+use tokio::{io::AsyncWriteExt, net::TcpListener};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -8,9 +8,11 @@ async fn main() -> Result<()> {
         .context("binding server")?;
 
     loop {
-        let _client = match listener.accept().await {
+        let (mut client, _) = match listener.accept().await {
             Ok(client) => client,
             Err(e) => anyhow::bail!("something went wrong: {e}"),
         };
+
+        client.write(b"HTTP/1.1 200 OK\r\n\r\n").await?;
     }
 }
