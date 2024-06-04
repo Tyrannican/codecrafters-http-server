@@ -25,6 +25,10 @@ impl Client {
         Ok(HttpRequest::new(buffer)?)
     }
 
+    pub(crate) async fn send_response(&mut self) -> Result<()> {
+        Ok(())
+    }
+
     pub(crate) async fn write_response_raw(&mut self, resp: &[u8]) -> Result<()> {
         self.stream.write(resp).await?;
         Ok(())

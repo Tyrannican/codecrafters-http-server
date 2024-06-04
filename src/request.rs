@@ -1,9 +1,10 @@
 use anyhow::Result;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum HttpMethod {
     Get,
+    Post,
     Invalid,
 }
 
@@ -25,6 +26,7 @@ impl From<&str> for HttpMethod {
     fn from(value: &str) -> Self {
         match value {
             "GET" => Self::Get,
+            "PUT" => Self::Post,
             _ => Self::Invalid,
         }
     }
@@ -32,29 +34,11 @@ impl From<&str> for HttpMethod {
 
 #[derive(Debug, Clone)]
 pub(crate) struct HttpRequest {
-    pub(crate) line: RequestLine,
-    pub(crate) headers: HashMap<String, String>,
-    pub(crate) body: Vec<u8>,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct RequestLine {
     pub(crate) method: HttpMethod,
     pub(crate) url: String,
     pub(crate) version: String,
-}
-
-impl RequestLine {
-    fn new(req: &[u8]) -> Result<Self> {
-        let req = String::from_utf8(req.to_vec())?;
-        let line = req.split(' ').collect::<Vec<&str>>();
-
-        Ok(Self {
-            method: HttpMethod::from(line[0]),
-            url: line[1].to_string(),
-            version: line[2].to_string(),
-        })
-    }
+    pub(crate) headers: HashMap<String, String>,
+    pub(crate) body: Vec<u8>,
 }
 
 impl HttpRequest {
@@ -64,6 +48,8 @@ impl HttpRequest {
             .map(|line| line.strip_suffix(b"\r").unwrap_or(line))
             .collect::<Vec<&[u8]>>();
 
+        let req_line = String::from_utf8(request[0].to_vec())?;
+        let req_line = req_line.split(' ').collect::<Vec<&str>>();
         let raw_headers = &request[1..request.len() - 2];
         let body = match request.last() {
             Some(body) => body.to_vec(),
@@ -81,7 +67,9 @@ impl HttpRequest {
         }
 
         Ok(Self {
-            line: RequestLine::new(request[0])?,
+            method: HttpMethod::from(req_line[0]),
+            url: req_line[1].to_string(),
+            version: req_line[2].to_string(),
             headers,
             body: body.to_vec(),
         })
