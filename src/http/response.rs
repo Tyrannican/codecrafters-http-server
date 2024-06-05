@@ -25,12 +25,6 @@ impl HttpResponse {
         self
     }
 
-    pub(crate) fn header(mut self, header: (&str, &str)) -> Self {
-        self.headers
-            .insert(header.0.to_string(), header.1.to_string());
-        self
-    }
-
     pub(crate) fn headers(mut self, headers: &[(&str, &str)]) -> Self {
         for header in headers {
             self.headers

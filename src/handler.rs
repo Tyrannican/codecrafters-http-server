@@ -30,9 +30,4 @@ impl Client {
         self.stream.write_all(&bytes).await?;
         Ok(())
     }
-
-    pub(crate) async fn write_response_raw(&mut self, resp: &[u8]) -> Result<()> {
-        self.stream.write(resp).await?;
-        Ok(())
-    }
 }

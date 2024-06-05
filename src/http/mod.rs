@@ -11,20 +11,15 @@ pub(crate) enum HttpMethod {
 pub(crate) enum HttpStatus {
     OK,
     NotFound,
+    BadRequest,
 }
 
 impl HttpStatus {
-    pub(crate) fn to_code(self) -> u16 {
-        match self {
-            Self::OK => 200,
-            Self::NotFound => 404,
-        }
-    }
-
     pub(crate) fn to_string(self) -> String {
         match self {
             Self::OK => "200 OK".to_string(),
             Self::NotFound => "404 Not Found".to_string(),
+            Self::BadRequest => "400 Bad Request".to_string(),
         }
     }
 }

@@ -79,7 +79,8 @@ async fn main() -> Result<()> {
     let mut http_server = HttpServer::new("127.0.0.1:4221")
         .await?
         .register_endpoint("/", HttpMethod::Get, get::root)
-        .register_endpoint("/echo/[str]", HttpMethod::Get, get::echo);
+        .register_endpoint("/echo/[str]", HttpMethod::Get, get::echo)
+        .register_endpoint("/user-agent", HttpMethod::Get, get::user_agent);
 
     http_server.serve().await
 }
