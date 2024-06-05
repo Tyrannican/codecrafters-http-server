@@ -36,7 +36,6 @@ impl HttpResponse {
             self.headers
                 .insert(header.0.to_string(), header.1.to_string());
         }
-
         self
     }
 

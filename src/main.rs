@@ -4,10 +4,12 @@ use tokio::net::TcpListener;
 
 use std::collections::HashMap;
 
+mod endpoints;
 mod handler;
 mod http;
 mod utils;
 
+use endpoints::get;
 use handler::Client;
 use http::{request::HttpRequest, response::HttpResponse, HttpMethod};
 
@@ -42,7 +44,8 @@ impl HttpServer {
 
     pub(crate) fn parse_endpoint(&self, request: HttpRequest) -> Result<HttpResponse> {
         for (endpoint, funcs) in self.endpoints.iter() {
-            let regex = Regex::new(&endpoint)?;
+            let regex_str = format!("^{endpoint}$");
+            let regex = Regex::new(&regex_str)?;
             if !regex.is_match(&request.url) {
                 continue;
             }
@@ -71,20 +74,12 @@ impl HttpServer {
     }
 }
 
-fn echo(req: HttpRequest) -> Result<HttpResponse> {
-    Ok(HttpResponse::new())
-}
-
-fn root(_req: HttpRequest) -> Result<HttpResponse> {
-    Ok(HttpResponse::new())
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut http_server = HttpServer::new("127.0.0.1:4221")
         .await?
-        .register_endpoint("/", HttpMethod::Get, root)
-        .register_endpoint("/echo/[str]", HttpMethod::Get, echo);
+        .register_endpoint("/", HttpMethod::Get, get::root)
+        .register_endpoint("/echo/[str]", HttpMethod::Get, get::echo);
 
     http_server.serve().await
 }
