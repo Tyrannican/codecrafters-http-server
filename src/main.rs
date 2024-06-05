@@ -20,7 +20,8 @@ async fn main() -> Result<()> {
         .await?
         .register_endpoint("/", HttpMethod::Get, get::root)
         .register_endpoint("/echo/[str]", HttpMethod::Get, get::echo)
-        .register_endpoint("/user-agent", HttpMethod::Get, get::user_agent);
+        .register_endpoint("/user-agent", HttpMethod::Get, get::user_agent)
+        .register_endpoint("/files/[str]", HttpMethod::Get, get::files);
 
     http_server.serve().await
 }

@@ -9,27 +9,12 @@ use crate::{
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-type EndpointMapping =
-    HashMap<String, HashMap<HttpMethod, fn(HttpRequest) -> Result<HttpResponse>>>;
+type EndpointCall = fn(HttpRequest) -> Result<HttpResponse>;
+type EndpointMapping = HashMap<String, HashMap<HttpMethod, EndpointCall>>;
 
 #[derive(Debug, Clone)]
-pub(crate) struct ServerContext<T: Clone> {
-    inner: HashMap<String, T>,
-}
-
-impl<T> ServerContext<T>
-where
-    T: Clone,
-{
-    pub(crate) fn new() -> Self {
-        Self {
-            inner: HashMap::new(),
-        }
-    }
-
-    pub(crate) fn add_context(&mut self, key: impl AsRef<str>, value: &T) {
-        self.inner.insert(key.as_ref().to_string(), value.clone());
-    }
+pub(crate) struct ServerContext {
+    pub(crate) workdir: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -70,9 +55,9 @@ impl HttpServer {
 
     pub(crate) async fn serve(self) -> Result<()> {
         let endpoints = Arc::new(self.endpoints);
-        let mut ctx = ServerContext::new();
-        ctx.add_context("workdir", &self.workdir);
-        let ctx = Arc::new(ctx);
+        let ctx = Arc::new(ServerContext {
+            workdir: self.workdir,
+        });
 
         loop {
             let mut client = match self.listener.accept().await {
@@ -80,11 +65,15 @@ impl HttpServer {
                 Err(e) => anyhow::bail!("something went wrong: {e}"),
             };
 
-            let ctx = Arc::clone(&ctx);
             let endpoints = Arc::clone(&endpoints);
+            let ctx = Arc::clone(&ctx);
             tokio::task::spawn(async move {
-                let request = client.parse_request().await.unwrap();
-                let response = parse_endpoint(endpoints, request).unwrap();
+                let request = client.parse_request(ctx).await.unwrap();
+                let response = if let Some(func) = parse_endpoint(endpoints, &request) {
+                    func(request).unwrap()
+                } else {
+                    HttpResponse::new().status(HttpStatus::NotFound)
+                };
 
                 client.send_response(response).await
             });
@@ -92,20 +81,20 @@ impl HttpServer {
     }
 }
 
-fn parse_endpoint(endpoints: Arc<EndpointMapping>, request: HttpRequest) -> Result<HttpResponse> {
+fn parse_endpoint(endpoints: Arc<EndpointMapping>, request: &HttpRequest) -> Option<EndpointCall> {
     for (endpoint, funcs) in endpoints.iter() {
         let regex_str = format!("^{endpoint}$");
-        let regex = Regex::new(&regex_str)?;
+        // NOTE: always a valid regex, no magic
+        let regex = Regex::new(&regex_str).unwrap();
         if !regex.is_match(&request.url) {
             continue;
         }
 
         match funcs.get(&request.method) {
-            Some(func) => return func(request),
+            Some(func) => return Some(*func),
             None => continue,
         };
     }
 
-    let not_found = HttpResponse::new().status(HttpStatus::NotFound);
-    Ok(not_found)
+    None
 }

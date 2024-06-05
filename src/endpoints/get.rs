@@ -38,3 +38,28 @@ pub(crate) fn user_agent(req: HttpRequest) -> Result<HttpResponse> {
     let bad_req = HttpResponse::new().status(HttpStatus::BadRequest);
     Ok(bad_req)
 }
+
+pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
+    let parts = split_url_into_parts(req.url);
+    // NOTE: always valid as it passes Regex to get here
+    let filename = parts.last().unwrap();
+
+    match &req.ctx.workdir {
+        Some(wd) => {
+            let fp = wd.join(filename);
+            if !fp.exists() {
+                return Ok(HttpResponse::new().status(HttpStatus::NotFound));
+            }
+            let buf = std::fs::read(fp)?;
+            let response = HttpResponse::new()
+                .headers(&[
+                    ("Content-Type", "application/octet-stream"),
+                    ("Content-Length", &format!("{}", buf.len())),
+                ])
+                .body(&buf);
+
+            Ok(response)
+        }
+        None => Ok(HttpResponse::new().status(HttpStatus::InternalServerError)),
+    }
+}

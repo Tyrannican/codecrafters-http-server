@@ -1,5 +1,7 @@
 use anyhow::Result;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
+
+use crate::connection::server::ServerContext;
 
 use super::HttpMethod;
 
@@ -9,10 +11,11 @@ pub(crate) struct HttpRequest {
     pub(crate) url: String,
     pub(crate) headers: HashMap<String, String>,
     body: Vec<u8>,
+    pub(crate) ctx: Arc<ServerContext>,
 }
 
 impl HttpRequest {
-    pub(crate) fn new(req: &[u8]) -> Result<Self> {
+    pub(crate) fn new(req: &[u8], ctx: Arc<ServerContext>) -> Result<Self> {
         let request = req
             .split(|&b| b == b'\n')
             .map(|line| line.strip_suffix(b"\r").unwrap_or(line))
@@ -41,6 +44,7 @@ impl HttpRequest {
             url: req_line[1].to_string(),
             headers,
             body: body.to_vec(),
+            ctx,
         })
     }
 }

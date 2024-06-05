@@ -12,6 +12,7 @@ pub(crate) enum HttpStatus {
     OK,
     NotFound,
     BadRequest,
+    InternalServerError,
 }
 
 impl HttpStatus {
@@ -20,6 +21,7 @@ impl HttpStatus {
             Self::OK => "200 OK".to_string(),
             Self::NotFound => "404 Not Found".to_string(),
             Self::BadRequest => "400 Bad Request".to_string(),
+            Self::InternalServerError => "500 Internal Server Error".to_string(),
         }
     }
 }
