@@ -8,7 +8,7 @@ mod utils;
 
 use cli::Cli;
 use connection::server::HttpServer;
-use endpoints::get;
+use endpoints::{get, post};
 use http::HttpMethod;
 
 use clap::Parser;
@@ -21,7 +21,8 @@ async fn main() -> Result<()> {
         .register_endpoint("/", HttpMethod::Get, get::root)
         .register_endpoint("/echo/[str]", HttpMethod::Get, get::echo)
         .register_endpoint("/user-agent", HttpMethod::Get, get::user_agent)
-        .register_endpoint("/files/[str]", HttpMethod::Get, get::files);
+        .register_endpoint("/files/[str]", HttpMethod::Get, get::files)
+        .register_endpoint("/files/[str]", HttpMethod::Post, post::files);
 
     http_server.serve().await
 }

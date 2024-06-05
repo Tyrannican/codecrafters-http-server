@@ -10,7 +10,7 @@ pub(crate) struct HttpRequest {
     pub(crate) method: HttpMethod,
     pub(crate) url: String,
     pub(crate) headers: HashMap<String, String>,
-    body: Vec<u8>,
+    pub(crate) body: Vec<u8>,
     pub(crate) ctx: Arc<ServerContext>,
 }
 
