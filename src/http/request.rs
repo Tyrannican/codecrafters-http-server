@@ -7,9 +7,8 @@ use super::HttpMethod;
 pub(crate) struct HttpRequest {
     pub(crate) method: HttpMethod,
     pub(crate) url: String,
-    pub(crate) version: String,
     pub(crate) headers: HashMap<String, String>,
-    pub(crate) body: Vec<u8>,
+    body: Vec<u8>,
 }
 
 impl HttpRequest {
@@ -40,7 +39,6 @@ impl HttpRequest {
         Ok(Self {
             method: HttpMethod::from(req_line[0]),
             url: req_line[1].to_string(),
-            version: req_line[2].to_string(),
             headers,
             body: body.to_vec(),
         })
