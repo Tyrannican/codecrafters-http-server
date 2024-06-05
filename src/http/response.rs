@@ -1,8 +1,11 @@
 use anyhow::Result;
 use std::{collections::HashMap, io::Write};
 
+use super::HttpStatus;
+
 pub(crate) struct HttpResponse {
-    status: String,
+    http_version: String,
+    status: HttpStatus,
     headers: HashMap<String, String>,
     body: Vec<u8>,
 }
@@ -10,10 +13,16 @@ pub(crate) struct HttpResponse {
 impl HttpResponse {
     pub(crate) fn new() -> Self {
         Self {
-            status: String::new(),
+            http_version: "HTTP/1.1".to_string(),
+            status: HttpStatus::OK,
             headers: HashMap::new(),
             body: Vec::new(),
         }
+    }
+
+    pub(crate) fn status(mut self, status: HttpStatus) -> Self {
+        self.status = status;
+        self
     }
 
     pub(crate) fn header(mut self, header: (&str, &str)) -> Self {
@@ -38,7 +47,7 @@ impl HttpResponse {
 
     pub(crate) fn into_bytes(self) -> Result<Vec<u8>> {
         let mut buffer = Vec::new();
-        buffer.write(self.status.as_bytes())?;
+        write!(buffer, "{} {}", self.http_version, self.status.to_string())?;
         write!(buffer, "\r\n")?;
         for (key, value) in self.headers.into_iter() {
             buffer.write(key.as_bytes())?;

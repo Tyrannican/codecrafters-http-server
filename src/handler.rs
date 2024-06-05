@@ -4,7 +4,7 @@ use tokio::{
     net::TcpStream,
 };
 
-use crate::request::HttpRequest;
+use crate::http::{request::HttpRequest, response::HttpResponse};
 
 const BUF_SIZE: usize = 4096;
 
@@ -25,7 +25,9 @@ impl Client {
         Ok(HttpRequest::new(buffer)?)
     }
 
-    pub(crate) async fn send_response(&mut self) -> Result<()> {
+    pub(crate) async fn send_response(&mut self, response: HttpResponse) -> Result<()> {
+        let bytes = response.into_bytes()?;
+        self.stream.write_all(&bytes).await?;
         Ok(())
     }
 

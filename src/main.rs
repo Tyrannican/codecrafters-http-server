@@ -1,22 +1,20 @@
 use anyhow::{Context, Result};
 use regex::Regex;
-use request::HttpMethod;
 use tokio::net::TcpListener;
 
 use std::collections::HashMap;
 
 mod handler;
-mod request;
-mod response;
+mod http;
 mod utils;
 
 use handler::Client;
-use request::HttpRequest;
+use http::{request::HttpRequest, response::HttpResponse, HttpMethod};
 
 #[derive(Debug)]
 pub(crate) struct HttpServer {
     listener: TcpListener,
-    endpoints: HashMap<String, HashMap<HttpMethod, fn(HttpRequest) -> usize>>,
+    endpoints: HashMap<String, HashMap<HttpMethod, fn(HttpRequest) -> Result<HttpResponse>>>,
 }
 
 impl HttpServer {
@@ -33,7 +31,7 @@ impl HttpServer {
         mut self,
         endpoint: impl AsRef<str>,
         method: HttpMethod,
-        func: fn(HttpRequest) -> usize,
+        func: fn(HttpRequest) -> Result<HttpResponse>,
     ) -> Self {
         let endpoint = endpoint.as_ref().replace("[str]", "(\\w+)");
         let entry = self.endpoints.entry(endpoint).or_insert(HashMap::new());
@@ -42,7 +40,7 @@ impl HttpServer {
         self
     }
 
-    pub(crate) fn parse_endpoint(&self, request: HttpRequest) -> Result<()> {
+    pub(crate) fn parse_endpoint(&self, request: HttpRequest) -> Result<HttpResponse> {
         for (endpoint, funcs) in self.endpoints.iter() {
             let regex = Regex::new(&endpoint)?;
             if !regex.is_match(&request.url) {
@@ -50,15 +48,13 @@ impl HttpServer {
             }
 
             match funcs.get(&request.method) {
-                Some(func) => {
-                    func(request);
-                    return Ok(());
-                }
-                None => 1,
+                Some(func) => return func(request),
+                None => continue,
             };
         }
 
-        Ok(())
+        let not_found = HttpResponse::new().status(http::HttpStatus::NotFound);
+        Ok(not_found)
     }
 
     pub(crate) async fn serve(&mut self) -> Result<()> {
@@ -70,16 +66,17 @@ impl HttpServer {
 
             let request = client.parse_request().await?;
             let response = self.parse_endpoint(request)?;
+            client.send_response(response).await?;
         }
     }
 }
 
-fn echo(req: HttpRequest) -> usize {
-    0
+fn echo(req: HttpRequest) -> Result<HttpResponse> {
+    Ok(HttpResponse::new())
 }
 
-fn root(req: HttpRequest) -> usize {
-    0
+fn root(_req: HttpRequest) -> Result<HttpResponse> {
+    Ok(HttpResponse::new())
 }
 
 #[tokio::main]
