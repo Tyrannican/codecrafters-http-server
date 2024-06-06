@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::{collections::HashMap, io::Write};
 
-use super::HttpStatus;
+use super::{request::HttpRequest, supported_encoding, HttpStatus};
 
 pub(crate) struct HttpResponse {
     http_version: String,
@@ -10,8 +10,38 @@ pub(crate) struct HttpResponse {
     body: Vec<u8>,
 }
 
+fn prepop_headers(req: &HttpRequest) -> HashMap<String, String> {
+    let mut headers = HashMap::new();
+    if let Some(content_encoding) = req.get_header("accept-encoding") {
+        let content_encoding = content_encoding
+            .split(", ")
+            .filter(|ce| supported_encoding(ce))
+            .collect::<Vec<&str>>();
+
+        if content_encoding.is_empty() {
+            return headers;
+        }
+
+        let value = content_encoding.join(", ");
+        headers.insert("content-encoding".to_string(), value);
+    }
+
+    headers
+}
+
 impl HttpResponse {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(req: &HttpRequest) -> Self {
+        let headers = prepop_headers(req);
+
+        Self {
+            http_version: "HTTP/1.1".to_string(),
+            status: HttpStatus::OK,
+            headers,
+            body: Vec::new(),
+        }
+    }
+
+    pub(crate) fn empty() -> Self {
         Self {
             http_version: "HTTP/1.1".to_string(),
             status: HttpStatus::OK,

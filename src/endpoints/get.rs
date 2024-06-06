@@ -5,15 +5,15 @@ use crate::{
 use anyhow::Result;
 
 pub(crate) fn root(_req: HttpRequest) -> Result<HttpResponse> {
-    Ok(HttpResponse::new())
+    Ok(HttpResponse::empty())
 }
 
 pub(crate) fn echo(req: HttpRequest) -> Result<HttpResponse> {
-    let parts = split_url_into_parts(req.url);
+    let parts = split_url_into_parts(&req.url);
 
     // NOTE: This has to be valid as this needs to pass a Regex to get here
     let arg = parts.last().unwrap();
-    let response = HttpResponse::new()
+    let response = HttpResponse::new(&req)
         .headers(&[
             ("Content-Type", "text/plain"),
             ("Content-Length", &format!("{}", arg.len())),
@@ -24,8 +24,8 @@ pub(crate) fn echo(req: HttpRequest) -> Result<HttpResponse> {
 }
 
 pub(crate) fn user_agent(req: HttpRequest) -> Result<HttpResponse> {
-    if let Some(user_agent) = req.headers.get("User-Agent") {
-        let response = HttpResponse::new()
+    if let Some(user_agent) = req.get_header("User-Agent") {
+        let response = HttpResponse::new(&req)
             .headers(&[
                 ("Content-Type", "text/plain"),
                 ("Content-Length", &format!("{}", user_agent.len())),
@@ -35,12 +35,12 @@ pub(crate) fn user_agent(req: HttpRequest) -> Result<HttpResponse> {
         return Ok(response);
     }
 
-    let bad_req = HttpResponse::new().status(HttpStatus::BadRequest);
+    let bad_req = HttpResponse::empty().status(HttpStatus::BadRequest);
     Ok(bad_req)
 }
 
 pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
-    let parts = split_url_into_parts(req.url);
+    let parts = split_url_into_parts(&req.url);
     // NOTE: always valid as it passes Regex to get here
     let filename = parts.last().unwrap();
 
@@ -48,10 +48,10 @@ pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
         Some(wd) => {
             let fp = wd.join(filename);
             if !fp.exists() {
-                return Ok(HttpResponse::new().status(HttpStatus::NotFound));
+                return Ok(HttpResponse::empty().status(HttpStatus::NotFound));
             }
             let buf = std::fs::read(fp)?;
-            let response = HttpResponse::new()
+            let response = HttpResponse::new(&req)
                 .headers(&[
                     ("Content-Type", "application/octet-stream"),
                     ("Content-Length", &format!("{}", buf.len())),
@@ -60,6 +60,6 @@ pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
 
             Ok(response)
         }
-        None => Ok(HttpResponse::new().status(HttpStatus::InternalServerError)),
+        None => Ok(HttpResponse::empty().status(HttpStatus::InternalServerError)),
     }
 }

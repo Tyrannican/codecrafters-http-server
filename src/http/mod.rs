@@ -1,6 +1,8 @@
 pub(crate) mod request;
 pub(crate) mod response;
 
+const SUPPORTED_ENCODINGS: [&str; 1] = ["gzip"];
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum HttpMethod {
     Get,
@@ -36,4 +38,12 @@ impl From<&str> for HttpMethod {
             _ => Self::Invalid,
         }
     }
+}
+
+pub(crate) fn supported_encoding(encoding: impl AsRef<str>) -> bool {
+    if SUPPORTED_ENCODINGS.contains(&encoding.as_ref()) {
+        return true;
+    }
+
+    false
 }

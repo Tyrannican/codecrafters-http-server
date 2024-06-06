@@ -36,7 +36,7 @@ impl HttpRequest {
                 anyhow::bail!("invalid header");
             };
 
-            headers.insert(key.to_string(), value.to_string());
+            headers.insert(key.to_lowercase(), value.to_lowercase());
         }
 
         Ok(Self {
@@ -46,5 +46,9 @@ impl HttpRequest {
             body: body.to_vec(),
             ctx,
         })
+    }
+
+    pub(crate) fn get_header(&self, header: impl AsRef<str>) -> Option<&String> {
+        self.headers.get(&header.as_ref().to_lowercase())
     }
 }

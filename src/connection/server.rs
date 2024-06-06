@@ -72,7 +72,7 @@ impl HttpServer {
                 let response = if let Some(func) = parse_endpoint(endpoints, &request) {
                     func(request).unwrap()
                 } else {
-                    HttpResponse::new().status(HttpStatus::NotFound)
+                    HttpResponse::empty().status(HttpStatus::NotFound)
                 };
 
                 client.send_response(response).await

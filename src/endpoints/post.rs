@@ -13,8 +13,8 @@ pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
         Some(wd) => {
             let filename = wd.join(filename);
             std::fs::write(filename, body)?;
-            return Ok(HttpResponse::new().status(HttpStatus::Created));
+            return Ok(HttpResponse::empty().status(HttpStatus::Created));
         }
-        None => Ok(HttpResponse::new().status(HttpStatus::InternalServerError)),
+        None => Ok(HttpResponse::empty().status(HttpStatus::InternalServerError)),
     }
 }
