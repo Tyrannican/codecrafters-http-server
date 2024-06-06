@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::{collections::HashMap, io::Write};
 
-use super::{request::HttpRequest, supported_encoding, HttpStatus};
+use super::{encoder::Encoder, request::HttpRequest, supported_encoding, HttpStatus};
 
 pub(crate) struct HttpResponse {
     http_version: String,
@@ -64,7 +64,21 @@ impl HttpResponse {
     }
 
     pub(crate) fn body(mut self, body: &[u8]) -> Self {
-        self.body = body.to_vec();
+        if let Some(encoding) = self.headers.get("content-encoding") {
+            let encoding_values = encoding
+                .split(", ")
+                .map(|e| e.to_string())
+                .collect::<Vec<String>>();
+            let chosen = encoding_values.first().unwrap();
+            let encoder = Encoder::new(chosen);
+            self.body = encoder.encode(body);
+        } else {
+            self.body = body.to_vec();
+        }
+
+        self.headers
+            .insert("content-length".to_string(), format!("{}", self.body.len()));
+
         self
     }
 

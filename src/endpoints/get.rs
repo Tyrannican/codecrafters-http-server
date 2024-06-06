@@ -14,10 +14,7 @@ pub(crate) fn echo(req: HttpRequest) -> Result<HttpResponse> {
     // NOTE: This has to be valid as this needs to pass a Regex to get here
     let arg = parts.last().unwrap();
     let response = HttpResponse::new(&req)
-        .headers(&[
-            ("Content-Type", "text/plain"),
-            ("Content-Length", &format!("{}", arg.len())),
-        ])
+        .headers(&[("Content-Type", "text/plain")])
         .body(arg.as_bytes());
 
     Ok(response)
@@ -26,10 +23,7 @@ pub(crate) fn echo(req: HttpRequest) -> Result<HttpResponse> {
 pub(crate) fn user_agent(req: HttpRequest) -> Result<HttpResponse> {
     if let Some(user_agent) = req.get_header("User-Agent") {
         let response = HttpResponse::new(&req)
-            .headers(&[
-                ("Content-Type", "text/plain"),
-                ("Content-Length", &format!("{}", user_agent.len())),
-            ])
+            .headers(&[("Content-Type", "text/plain")])
             .body(user_agent.as_bytes());
 
         return Ok(response);
@@ -52,10 +46,7 @@ pub(crate) fn files(req: HttpRequest) -> Result<HttpResponse> {
             }
             let buf = std::fs::read(fp)?;
             let response = HttpResponse::new(&req)
-                .headers(&[
-                    ("Content-Type", "application/octet-stream"),
-                    ("Content-Length", &format!("{}", buf.len())),
-                ])
+                .headers(&[("Content-Type", "application/octet-stream")])
                 .body(&buf);
 
             Ok(response)
